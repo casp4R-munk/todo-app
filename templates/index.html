@@ -2,15 +2,97 @@
 <html>
 <head>
     <title>To-Do App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 10px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #3b82f6;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background: #334155;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .delete {
+            background: red;
+            width: auto;
+            padding: 5px 10px;
+        }
+
+        .logout {
+            background: gray;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
+
 <body>
 
-<h1>Min To-Do App 🚀</h1>
+<div class="container">
 
-<input type="text" id="taskInput" placeholder="Skriv oppgave">
-<button onclick="addTask()">Legg til</button>
+    <button class="logout" onclick="logout()">Logg ut</button>
 
-<ul id="taskList"></ul>
+    <h1>Min To-Do 🚀</h1>
+
+    <input type="text" id="taskInput" placeholder="Skriv oppgave...">
+    <button onclick="addTask()">Legg til</button>
+
+    <ul id="taskList"></ul>
+
+</div>
 
 <script>
 async function loadTasks() {
@@ -25,7 +107,8 @@ async function loadTasks() {
         li.innerText = task.text
 
         const btn = document.createElement("button")
-        btn.innerText = "Slett"
+        btn.innerText = "X"
+        btn.className = "delete"
         btn.onclick = () => deleteTask(task.id)
 
         li.appendChild(btn)
@@ -36,6 +119,8 @@ async function loadTasks() {
 async function addTask() {
     const input = document.getElementById("taskInput")
     const text = input.value
+
+    if (text === "") return
 
     await fetch("/tasks", {
         method: "POST",
@@ -55,6 +140,10 @@ async function deleteTask(id) {
     })
 
     loadTasks()
+}
+
+function logout() {
+    window.location.href = "/logout"
 }
 
 loadTasks()
