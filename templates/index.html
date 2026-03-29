@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>To-Do App</title>
+</head>
+<body>
+
+<h1>Min To-Do</h1>
+
+<form action="/add" method="POST">
+    <input type="text" name="task" placeholder="Skriv oppgave">
+    <button type="submit">Legg til</button>
+</form>
+
+<ul>
+    {% for task in tasks %}
+        <li>
+            {{ task[1] }}
+            <a href="/delete/{{ task[0] }}">❌</a>
+        </li>
+    {% endfor %}
+</ul>
+
+</body>
+</html>
