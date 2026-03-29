@@ -5,21 +5,60 @@
 </head>
 <body>
 
-<h1>Min To-Do</h1>
+<h1>Min To-Do App 🚀</h1>
 
-<form action="/add" method="POST">
-    <input type="text" name="task" placeholder="Skriv oppgave">
-    <button type="submit">Legg til</button>
-</form>
+<input type="text" id="taskInput" placeholder="Skriv oppgave">
+<button onclick="addTask()">Legg til</button>
 
-<ul>
-    {% for task in tasks %}
-        <li>
-            {{ task[1] }}
-            <a href="/delete/{{ task[0] }}">❌</a>
-        </li>
-    {% endfor %}
-</ul>
+<ul id="taskList"></ul>
+
+<script>
+async function loadTasks() {
+    const res = await fetch("/tasks")
+    const tasks = await res.json()
+
+    const list = document.getElementById("taskList")
+    list.innerHTML = ""
+
+    tasks.forEach(task => {
+        const li = document.createElement("li")
+        li.innerText = task.text
+
+        const btn = document.createElement("button")
+        btn.innerText = "Slett"
+        btn.onclick = () => deleteTask(task.id)
+
+        li.appendChild(btn)
+        list.appendChild(li)
+    })
+}
+
+async function addTask() {
+    const input = document.getElementById("taskInput")
+    const text = input.value
+
+    await fetch("/tasks", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ text })
+    })
+
+    input.value = ""
+    loadTasks()
+}
+
+async function deleteTask(id) {
+    await fetch(`/tasks/${id}`, {
+        method: "DELETE"
+    })
+
+    loadTasks()
+}
+
+loadTasks()
+</script>
 
 </body>
 </html>
