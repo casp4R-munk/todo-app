@@ -1,24 +1,23 @@
 import sqlite3
 
 conn = sqlite3.connect("database.db")
+cur = conn.cursor()
 
-conn.execute("""
+cur.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT,
+    username TEXT UNIQUE,
     password TEXT
 )
 """)
 
-conn.execute("""
+cur.execute("""
 CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    text TEXT,
-    user_id INTEGER
+    user_id INTEGER,
+    text TEXT
 )
 """)
-
-conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", ("admin", "alphaadmin"))
 
 conn.commit()
 conn.close()

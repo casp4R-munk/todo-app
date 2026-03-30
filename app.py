@@ -1,92 +1,105 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, session, jsonify
 import sqlite3
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
+
 def get_db():
-    conn = sqlite3.connect("database.db")
-    conn.row_factory = sqlite3.Row
-    return conn
+    return sqlite3.connect("database.db")
+
+
+# REGISTER
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = generate_password_hash(request.form["password"])
+
+        db = get_db()
+        cur = db.cursor()
+
+        try:
+            cur.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+            db.commit()
+            return redirect("/login")
+        except:
+            return "Bruker finnes allerede"
+
+    return render_template("register.html")
+
 
 # LOGIN
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
+        username = request.form["username"]
+        password = request.form["password"]
 
-        conn = get_db()
-        user = conn.execute(
-            "SELECT * FROM users WHERE username=? AND password=?",
-            (username, password)
-        ).fetchone()
-        conn.close()
+        db = get_db()
+        cur = db.cursor()
+        cur.execute("SELECT id, password FROM users WHERE username=?", (username,))
+        user = cur.fetchone()
 
-        if user:
-            session["user_id"] = user["id"]
-            return redirect(url_for("home"))
-        else:
-            return "Feil brukernavn eller passord"
+        if user and check_password_hash(user[1], password):
+            session["user_id"] = user[0]
+            return redirect("/")
 
     return render_template("login.html")
+
 
 # LOGOUT
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("login"))
+    return redirect("/login")
 
-# HOME (beskyttet)
+
+# HOME
 @app.route("/")
 def home():
     if "user_id" not in session:
-        return redirect(url_for("login"))
+        return redirect("/login")
     return render_template("index.html")
 
-# GET TASKS
-@app.route("/tasks", methods=["GET"])
-def get_tasks():
+
+# TASKS
+@app.route("/tasks")
+def tasks():
     if "user_id" not in session:
         return jsonify([])
 
-    conn = get_db()
-    tasks = conn.execute(
-        "SELECT * FROM tasks WHERE user_id=?",
-        (session["user_id"],)
-    ).fetchall()
-    conn.close()
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("SELECT id, text FROM tasks WHERE user_id=?", (session["user_id"],))
+    rows = cur.fetchall()
 
-    return jsonify([dict(row) for row in tasks])
+    return jsonify([{"id": r[0], "text": r[1]} for r in rows])
 
-# ADD TASK
+
 @app.route("/tasks", methods=["POST"])
 def add_task():
-    if "user_id" not in session:
-        return jsonify({"error": "Not logged in"})
+    data = request.json
 
-    data = request.get_json()
-    text = data.get("text")
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("INSERT INTO tasks (user_id, text) VALUES (?, ?)",
+                (session["user_id"], data["text"]))
+    db.commit()
 
-    conn = get_db()
-    conn.execute(
-        "INSERT INTO tasks (text, user_id) VALUES (?, ?)",
-        (text, session["user_id"])
-    )
-    conn.commit()
-    conn.close()
+    return "", 200
 
-    return jsonify({"message": "Task lagt til!"})
 
-# DELETE TASK
 @app.route("/tasks/<int:id>", methods=["DELETE"])
 def delete_task(id):
-    conn = get_db()
-    conn.execute("DELETE FROM tasks WHERE id=?", (id,))
-    conn.commit()
-    conn.close()
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("DELETE FROM tasks WHERE id=?", (id,))
+    db.commit()
 
-    return jsonify({"message": "Slettet"})
+    return "", 200
+
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=True)
