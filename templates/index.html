@@ -1,13 +1,114 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>To-Do App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    transition: 0.3s;
+}
+
+.light {
+    background: white;
+    color: black;
+}
+
+.container {
+    max-width: 500px;
+    margin: auto;
+    padding: 20px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+}
+
+button {
+    padding: 10px;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.task {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+</style>
 </head>
 
-<body style="background:black; color:white; text-align:center; padding:50px;">
+<body>
 
-<h1>MIN NYE APP 🔥🔥🔥</h1>
-<p>TEST 123</p>
+<div class="container">
+
+<h1 id="title">To-Do 🚀</h1>
+
+<button onclick="toggleTheme()">Dark / Light</button>
+<button onclick="toggleLang()">NO / EN</button>
+<button onclick="logout()">Logout</button>
+
+<input id="taskInput" placeholder="Skriv oppgave">
+<button onclick="addTask()">Legg til</button>
+
+<div id="tasks"></div>
+
+</div>
+
+<script>
+let lang = "no"
+
+function toggleLang() {
+    lang = lang === "no" ? "en" : "no"
+    document.getElementById("title").innerText =
+        lang === "no" ? "Oppgaver" : "Tasks"
+}
+
+function toggleTheme() {
+    document.body.classList.toggle("light")
+}
+
+async function loadTasks() {
+    const res = await fetch("/tasks")
+    const data = await res.json()
+
+    const div = document.getElementById("tasks")
+    div.innerHTML = ""
+
+    data.forEach(t => {
+        const el = document.createElement("div")
+        el.className = "task"
+        el.innerHTML = `${t.text} <button onclick="del(${t.id})">X</button>`
+        div.appendChild(el)
+    })
+}
+
+async function addTask() {
+    const val = document.getElementById("taskInput").value
+
+    await fetch("/tasks", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({text: val})
+    })
+
+    loadTasks()
+}
+
+async function del(id) {
+    await fetch("/tasks/"+id, {method:"DELETE"})
+    loadTasks()
+}
+
+function logout() {
+    window.location.href = "/logout"
+}
+
+loadTasks()
+</script>
 
 </body>
 </html>
